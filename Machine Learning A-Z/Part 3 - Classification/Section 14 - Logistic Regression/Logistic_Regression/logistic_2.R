@@ -1,0 +1,67 @@
+dataset = read.csv('Social_Network_Ads.csv')
+dataset = dataset[3:5]
+#splitting the data
+library(caTools)
+set.seed(123)
+split = sample.split(dataset$Purchased, SplitRatio = 0.75)
+training_set = subset(dataset, split == TRUE)
+testing_set = subset(dataset, split == FALSE)
+
+#Feature scaling
+training_set[-3] = scale(training_set[-3])
+testing_set[-3] = scale(testing_set[-3])
+
+#regressor
+#generalized linear model
+#family --> binomial for logistic regression
+classifier = glm(formula =  Purchased ~ ., data = training_set, family = binomial )
+
+#predicting test results
+#probability of testing set
+#for logistic regression, type has to be response
+#-3 removes the 3rd column
+#this will return the probability of the user to buy the SUV
+prob_pred = predict(classifier, type = 'response', newdata = testing_set[-3])
+#if else (true condition, true value, false value)
+y_pred = ifelse(prob_pred > 0.5, 1, 0)
+
+#column of the real value
+confusion_matrix =  table(testing_set[, 3], y_pred )
+
+#visualizing the training and testing set results
+
+# Visualising the Training set results
+#install.packages('ElemStatLearn')
+library(ElemStatLearn)
+set = training_set
+#each pixel point will be considered as a user
+X1 = seq(min(set[, 1]) - 1, max(set[, 1]) + 1, by = 0.01)
+X2 = seq(min(set[, 2]) - 1, max(set[, 2]) + 1, by = 0.01)
+grid_set = expand.grid(X1, X2)
+colnames(grid_set) = c('Age', 'EstimatedSalary')
+prob_set = predict(classifier, type = 'response', newdata = grid_set)
+y_grid = ifelse(prob_set > 0.5, 1, 0)
+plot(set[, -3],
+     main = 'Logistic Regression (Training set)',
+     xlab = 'Age', ylab = 'Estimated Salary',
+     xlim = range(X1), ylim = range(X2))
+contour(X1, X2, matrix(as.numeric(y_grid), length(X1), length(X2)), add = TRUE)
+points(grid_set, pch = '.', col = ifelse(y_grid == 1, 'springgreen3', 'tomato'))
+points(set, pch = 21, bg = ifelse(set[, 3] == 1, 'green4', 'red3'))
+
+# Visualising the Test set results
+library(ElemStatLearn)
+set = testing_set
+X1 = seq(min(set[, 1]) - 1, max(set[, 1]) + 1, by = 0.01)
+X2 = seq(min(set[, 2]) - 1, max(set[, 2]) + 1, by = 0.01)
+grid_set = expand.grid(X1, X2)
+colnames(grid_set) = c('Age', 'EstimatedSalary')
+prob_set = predict(classifier, type = 'response', newdata = grid_set)
+y_grid = ifelse(prob_set > 0.5, 1, 0)
+plot(set[, -3],
+     main = 'Logistic Regression (Test set)',
+     xlab = 'Age', ylab = 'Estimated Salary',
+     xlim = range(X1), ylim = range(X2))
+contour(X1, X2, matrix(as.numeric(y_grid), length(X1), length(X2)), add = TRUE)
+points(grid_set, pch = '.', col = ifelse(y_grid == 1, 'springgreen3', 'tomato'))
+points(set, pch = 21, bg = ifelse(set[, 3] == 1, 'green4', 'red3'))
